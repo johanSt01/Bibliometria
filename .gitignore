@@ -1,0 +1,6 @@
+# Ignorar archivos de caché de Python
+__pycache__/
+*.py[cod]
+
+# Ignorar archivos y carpetas
+Bases de datos separadas/
