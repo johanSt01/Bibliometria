@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center">Seleccione el tipo de datos descriptivos</h1>
+        
+        <!-- Formulario de selección -->
+        <form method="POST">
+            <div class="mb-3">
+                <label for="selectCampo" class="form-label">Campo</label>
+                <select class="form-select" id="selectCampo" name="campo">
+                    <option selected disabled>Seleccione el campo</option>
+                    <option value="year">Año</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Generar Histograma</button>
+        </form>
+        
+        <!-- Mostrar el histograma si está disponible -->
+        {% if imagen_histograma %}
+            <div class="mt-4">
+                <h2 class="text-center">Histograma de Frecuencia</h2>
+                <img src="{{ url_for('static', filename='histograma_frecuencias.png') }}" alt="Histograma de Frecuencia">
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

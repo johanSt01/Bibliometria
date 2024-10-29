@@ -1,0 +1,29 @@
+/* styles.css */
+
+/* Centrar y estilizar el encabezado de la barra de navegación */
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0056b3; /* Cambia este color según tus preferencias */
+}
+
+/* Cambiar el color del texto al pasar el ratón sobre el enlace */
+.navbar-brand:hover {
+    color: #004494;
+}
+
+/* Ajustes opcionales para la página */
+h1 {
+    margin-top: 20px;
+    font-size: 2rem;
+    color: #333;
+}
+
+form label {
+    font-weight: bold;
+    color: #0056b3;
+}
+
+select.form-select {
+    color: #333;
+}
