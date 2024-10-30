@@ -2,5 +2,3 @@
 __pycache__/
 *.py[cod]
 
-# Ignorar archivos y carpetas
-Bases de datos separadas/

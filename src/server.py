@@ -4,7 +4,6 @@ from Util.BibFileUtil import BibFileUtil
 
 app = Flask(__name__, static_folder='Style')
 
-
 # Ruta principal
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -12,6 +11,7 @@ def index():
     # Configuración de ruta y archivos
     ruta = "./Util/"  # Cambiado para usar ruta relativa desde src
     archivo_entrada = ruta + "filtradoPorDoi.bib"
+    titulo = "Histograma de frecuencias"
     
     if request.method == 'POST':
         # Si el usuario selecciona "Año", calculamos las estadísticas y generamos el histograma
@@ -21,11 +21,21 @@ def index():
             entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo)
             
             # Calcular estadísticas
-            stats = EstadisticasDescriptivas.calcular_estadisticas(entradas, campo)
+            stats = EstadisticasDescriptivas.calcular_estadisticas_anio(entradas, campo)
+
+            # Generar y obtener la ruta del histograma
+            imagen_histograma = EstadisticasDescriptivas.generar_histograma(stats, campo, titulo)
+
+        if campo == "author":
+            # Supón que tienes las entradas ya cargadas
+            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo)
+            
+            # Calcular estadísticas
+            stats = EstadisticasDescriptivas.autores_mas_frecuentes(entradas, campo)
             
             # Generar y obtener la ruta del histograma
-            imagen_histograma = EstadisticasDescriptivas.generar_histograma(stats)
-    
+            imagen_histograma = EstadisticasDescriptivas.generar_histograma({'frecuencias': stats}, campo, titulo)
+
     return render_template('index.html', imagen_histograma=imagen_histograma)
 
 if __name__ == '__main__':

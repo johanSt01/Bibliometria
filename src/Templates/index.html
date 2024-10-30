@@ -12,6 +12,7 @@
                 <select class="form-select" id="selectCampo" name="campo">
                     <option selected disabled>Seleccione el campo</option>
                     <option value="year">Año</option>
+                    <option value="author">author</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary">Generar Histograma</button>
@@ -21,7 +22,7 @@
         {% if imagen_histograma %}
             <div class="mt-4">
                 <h2 class="text-center">Histograma de Frecuencia</h2>
-                <img src="{{ url_for('static', filename='histograma_frecuencias.png') }}" alt="Histograma de Frecuencia">
+                <img src="data:image/png;base64,{{ imagen_histograma }}" alt="Histograma de Frecuencia">
             </div>
         {% endif %}
     </div>

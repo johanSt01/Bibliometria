@@ -82,5 +82,5 @@ class BibFileUtil:
                         valor_orden_actual = ""
                         dentro_de_entrada = False
         
-        print(f"Número de archivos: {conteo_entradas}")
+        # print(f"Número de archivos: {conteo_entradas}")
         return entradas
