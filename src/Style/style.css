@@ -22,8 +22,11 @@ h1 {
 form label {
     font-weight: bold;
     color: #0056b3;
+
 }
 
 select.form-select {
     color: #333;
 }
+
+

@@ -21,14 +21,9 @@ class EstadisticasDescriptivas:
     
     def calcular_estadisticas_anio(entradas, campo):
         """
-        Calcula estadísticas descriptivas para un campo específico del archivo BibTeX.
-        
-        Args:
-            entradas: Lista de entradas BibTeX
-            campo: Campo a analizar (ejemplo: 'year')
-            
+        Calcula estadísticas descriptivas para un campo específico del archivo BibTeX.            
         Returns:
-            dict: Diccionario con las estadísticas calculadas
+            Diccionario con las estadísticas calculadas
         """
         try:
             # Extraer los valores numéricos del campo especificado
@@ -75,14 +70,8 @@ class EstadisticasDescriptivas:
     def autores_mas_frecuentes(entradas, campo, n_top=15):
         """
         Encuentra los autores más frecuentes en el primer puesto de autoría.
-
-        Args:
-            entradas: Lista de entradas BibTeX
-            campo: Campo en el cual buscar los autores (por defecto, 'author')
-            n_top: Número de autores más frecuentes a mostrar
-            
         Returns:
-            dict: Diccionario con los autores más frecuentes y sus respectivas frecuencias.
+            Diccionario con los autores más frecuentes y sus respectivas frecuencias.
         """
         # Expresión regular para verificar que el nombre del autor no esté vacío o sea solo espacios
         regex_autor_valido = re.compile(r'\S')  # Busca al menos un carácter no blanco
@@ -112,6 +101,49 @@ class EstadisticasDescriptivas:
 
         return autores_frecuentes
     
+    def calcular_estadisticas(entradas, campo="ENTRYTYPE"):
+        """
+        Calcula estadísticas descriptivas para el tipo de producto (ENTRYTYPE) u otro campo en un archivo BibTeX.
+        
+        Args:
+            entradas: Lista de objetos EntradaBib con la información de cada entrada.
+            campo: Indica si estamos calculando estadísticas para ENTRYTYPE o para valor_orden.
+            
+        Returns:
+            Diccionario con las estadísticas calculadas para ENTRYTYPE o valor_orden.
+        """
+        try:
+            # Condicional para decidir qué lista de valores usar
+            if campo == "ENTRYTYPE":
+                tipos_producto = [entrada.entry_type for entrada in entradas if entrada.entry_type]
+            else:
+                tipos_producto = [entrada.valor_orden for entrada in entradas if entrada.valor_orden]
+            
+            if not tipos_producto:
+                raise ValueError(f"No se encontraron valores válidos para el campo '{campo}' en las entradas.")
+            
+            # Calcular frecuencias y moda
+            frecuencias = Counter(tipos_producto)
+            moda = frecuencias.most_common(1)[0] if frecuencias else None
+
+            # Calcular la "mediana" como valor medio alfabético si es categórico
+            tipos_ordenados = sorted(tipos_producto)
+            mediana = tipos_ordenados[len(tipos_ordenados) // 2] if tipos_ordenados else None
+            
+            # Crear el diccionario de estadísticas
+            stats = {
+                'cantidad': len(tipos_producto),
+                'frecuencias': dict(frecuencias),
+                'moda': moda,
+                'mediana': mediana
+            }
+            
+            return stats
+            
+        except Exception as e:
+            print(f"Error al calcular estadísticas: {str(e)}")
+            return None
+        
     def generar_histograma(stats, etiqueta_x, titulo):
         """
         Genera un histograma basado en las frecuencias de los datos y lo guarda como imagen en base 64.
@@ -141,30 +173,6 @@ class EstadisticasDescriptivas:
         
         # Devolver la imagen en base64
         return img_base64
-    
-    # def generar_histograma(stats, nombre_archivo="histograma_frecuencias.png"):
-    #     """
-    #     Genera un histograma basado en las frecuencias de los años y lo guarda como imagen.
-
-    #     Args:
-    #         stats (dict): Estadísticas descriptivas que incluyen las frecuencias.
-    #         nombre_archivo (str): Nombre del archivo de imagen de salida.
-    #     """
-    #     # Crear el histograma
-    #     plt.figure(figsize=(10, 6))
-    #     plt.bar(stats['frecuencias'].keys(), stats['frecuencias'].values(), color='skyblue')
-    #     plt.xlabel('Año')
-    #     plt.ylabel('Frecuencia')
-    #     plt.title('Frecuencia de registros por año')
-    #     plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-    #     # Guardar la imagen en la carpeta Style
-    #     ruta_salida = os.path.join("Style", nombre_archivo)
-    #     plt.savefig(ruta_salida)
-    #     plt.close()
-
-    #     return ruta_salida
-
 
 def main():
     # Configuración de ruta y archivos
@@ -176,12 +184,11 @@ def main():
     os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
 
     # Campo por el cual se va a ordenar
-    campo_orden = "author"
+    campo_orden = "ENTRYTYPE"
 
     try:    
         # Leer las entradas desde el archivo BibTeX
         # entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo_orden)
-
         salidas = BibFileUtil.leer_archivo_bib(archivo_salida, campo_orden)
 
         # Calcular estadísticas
@@ -190,27 +197,16 @@ def main():
         #EstadisticasDescriptivas.generar_histograma(stats)
 
         # Obtener los autores más frecuentes del primer puesto
-        autores_frecuentes = EstadisticasDescriptivas.autores_mas_frecuentes(salidas, campo_orden)
-        print("\nAutores más frecuentes en el primer puesto:")
-        for autor, frecuencia in autores_frecuentes.items():
-            print(f"{autor}: {frecuencia} artículos")
+        # autores_frecuentes = EstadisticasDescriptivas.autores_mas_frecuentes(salidas, campo_orden)
+        # print("\nAutores más frecuentes en el primer puesto:")
+        # for autor, frecuencia in autores_frecuentes.items():
+        #     print(f"{autor}: {frecuencia} artículos")
 
-        stats_autores = EstadisticasDescriptivas.autores_mas_frecuentes(salidas, campo_orden)
-        EstadisticasDescriptivas.generar_histograma(
-            {'frecuencias': stats_autores}, 
-            campo_orden, 
-            titulo="Frecuencia de los primeros autores más frecuentes"
-        )
-
-
-
-        # Ordenar las entradas usando GnomeSort
-        #GnomeSort.gnome_sort(entradas)
-
-        # Escribir las entradas ordenadas en el archivo de salida
-        #BibFileUtil.escribir_entradas_ordenadas(entradas, archivo_salida)
-        
-        #print(f"\nArchivo ordenado guardado exitosamente en: {archivo_salida}")
+        # Verificar que cada entrada tenga el ENTRYTYPE correcto
+        # for entrada in salidas:
+        #     print(f"ENTRYTYPE: {entrada.entry_type}, Clave: {entrada.clave}")
+        tipo_producto = EstadisticasDescriptivas.calcular_estadisticas(salidas, campo_orden)
+        print(tipo_producto)
         
     except FileNotFoundError:
         print(f"Error: No se pudo encontrar el archivo de entrada: {archivo_entrada}")

@@ -8,6 +8,8 @@ app = Flask(__name__, static_folder='Style')
 @app.route('/', methods=['GET', 'POST'])
 def index():
     imagen_histograma = None
+    stats = None
+
     # Configuración de ruta y archivos
     ruta = "./Util/"  # Cambiado para usar ruta relativa desde src
     archivo_entrada = ruta + "filtradoPorDoi.bib"
@@ -36,7 +38,7 @@ def index():
             # Generar y obtener la ruta del histograma
             imagen_histograma = EstadisticasDescriptivas.generar_histograma({'frecuencias': stats}, campo, titulo)
 
-    return render_template('index.html', imagen_histograma=imagen_histograma)
+    return render_template('index.html', imagen_histograma=imagen_histograma, estadisticas=stats)
 
 if __name__ == '__main__':
     app.run(debug=True)
