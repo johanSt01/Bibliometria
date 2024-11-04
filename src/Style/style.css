@@ -1,5 +1,10 @@
 /* styles.css */
 
+/* Cambiar el color de fondo a gris claro */
+body {
+    background-color: #9bb0c7; /* Un gris claro */
+}
+
 /* Centrar y estilizar el encabezado de la barra de navegación */
 .navbar-brand {
     font-size: 1.5rem;
@@ -22,11 +27,8 @@ h1 {
 form label {
     font-weight: bold;
     color: #0056b3;
-
 }
 
 select.form-select {
     color: #333;
 }
-
-

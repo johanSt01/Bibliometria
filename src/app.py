@@ -1,11 +1,16 @@
 import os
 import sys
-from collections import Counter
+from collections import defaultdict, Counter
 import statistics
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import re
 import io
 import base64
+import csv
+from wordcloud import WordCloud
+from io import BytesIO
 
 # Añadir el directorio actual al path de Python
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -66,12 +71,15 @@ class EstadisticasDescriptivas:
         except Exception as e:
             print(f"Error al calcular estadísticas: {str(e)}")
             return None
-    
-    def autores_mas_frecuentes(entradas, campo, n_top=15):
+
+    def calcular_estadisticas_max15(entradas, campo, n_top=15):
         """
-        Encuentra los autores más frecuentes en el primer puesto de autoría.
-        Returns:
-            Diccionario con los autores más frecuentes y sus respectivas frecuencias.
+        Encuentra los autores más frecuentes en el primer puesto de autoría y calcula estadísticas adicionales.
+        
+        Args:
+            entradas: Lista de entradas de un archivo BibTeX.
+            campo: El campo sobre el cual se realiza el análisis, generalmente 'author'.
+            n_top: Número de autores principales a retornar en el análisis.
         """
         # Expresión regular para verificar que el nombre del autor no esté vacío o sea solo espacios
         regex_autor_valido = re.compile(r'\S')  # Busca al menos un carácter no blanco
@@ -99,16 +107,28 @@ class EstadisticasDescriptivas:
         # Seleccionar los 'n_top' autores más frecuentes
         autores_frecuentes = dict(contador_autores.most_common(n_top))
 
-        return autores_frecuentes
+        # Calcular estadísticas adicionales
+        total_autores = len(primeros_autores)
+        moda = contador_autores.most_common(1)[0] if contador_autores else None
+        
+        # Ordenar los autores alfabéticamente para calcular la mediana
+        autores_ordenados = sorted(primeros_autores)
+        mediana = autores_ordenados[len(autores_ordenados) // 2] if autores_ordenados else None
+
+        # Crear el diccionario de estadísticas
+        stats = {
+            'cantidad': total_autores,
+            'frecuencias': autores_frecuentes,
+            'moda': moda,
+            'mediana': mediana,
+        }  
+
+        return stats
     
-    def calcular_estadisticas(entradas, campo="ENTRYTYPE"):
+    def calcular_estadisticas(entradas, campo):
         """
         Calcula estadísticas descriptivas para el tipo de producto (ENTRYTYPE) u otro campo en un archivo BibTeX.
-        
-        Args:
-            entradas: Lista de objetos EntradaBib con la información de cada entrada.
-            campo: Indica si estamos calculando estadísticas para ENTRYTYPE o para valor_orden.
-            
+
         Returns:
             Diccionario con las estadísticas calculadas para ENTRYTYPE o valor_orden.
         """
@@ -143,27 +163,31 @@ class EstadisticasDescriptivas:
         except Exception as e:
             print(f"Error al calcular estadísticas: {str(e)}")
             return None
-        
-    def generar_histograma(stats, etiqueta_x, titulo):
+    @staticmethod
+    def generar_histograma(stats, etiqueta_x):
         """
-        Genera un histograma basado en las frecuencias de los datos y lo guarda como imagen en base 64.
+        Genera un histograma basado en las frecuencias de los datos y lo guarda como imagen en base64.
 
         Args:
             stats (dict): Estadísticas descriptivas que incluyen las frecuencias.
             etiqueta_x (str): Etiqueta para el eje X.
-            titulo (str): Título del histograma.
+
+        Returns:
+            str: Imagen del histograma en formato base64.
         """
         # Crear el histograma
         plt.figure(figsize=(10, 6))
         plt.bar(stats['frecuencias'].keys(), stats['frecuencias'].values(), color='skyblue')
         plt.xlabel(etiqueta_x)
         plt.ylabel('Frecuencia')
-        plt.title(titulo)
         plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        # Rotar las etiquetas del eje X para que aparezcan verticalmente
+        plt.xticks(rotation=90)
 
         # Guardar en un buffer en lugar de un archivo
         buffer = io.BytesIO()
-        plt.savefig(buffer, format="png")
+        plt.savefig(buffer, format="png", bbox_inches="tight")
         plt.close()
 
         # Codificar en base64
@@ -173,43 +197,145 @@ class EstadisticasDescriptivas:
         
         # Devolver la imagen en base64
         return img_base64
+    
+    
+   
+    def cargar_datos(nombre_archivo):
+        """
+        Carga el archivo de categorías y sinónimos en un diccionario.
+        
+        Args:
+            nombre_archivo: Nombre del archivo CSV que contiene las categorías y sinónimos.
+        
+        Returns:
+            Diccionario con categorías como claves y listas de sinónimos como valores, donde cada sinónimo
+            compuesto es una lista de sus partes.
+        """
+        categorias = {}
+        with open(nombre_archivo, mode='r', encoding='utf-8') as archivo_csv:
+            lector_csv = csv.DictReader(archivo_csv)
+            for fila in lector_csv:
+                categoria = fila['Categoria'].strip() # Elimina espacios y convierte a minúsculas
+                sinonimo = fila['Variable'].strip()   # Elimina espacios y convierte a minúsculas
+                
+                # Manejar sinónimos compuestos separados por guion
+                if ' - ' in sinonimo:
+                    partes = sinonimo.split(' - ')
+                    sinonimos = [parte.strip() for parte in partes]  # Cada parte como un sinónimo individual
+                else:
+                    sinonimos = [sinonimo]  # Si no hay guion, solo toma el sinónimo como está
+
+                # Si la categoría no existe, inicializa la lista
+                if categoria not in categorias:
+                    categorias[categoria] = []
+                
+                # Agrega todas las partes del sinónimo a la lista de la categoría correspondiente
+                categorias[categoria].append(sinonimos)  # Guardar lista de sinónimos o partes como una entrada
+        
+        return categorias
+
+    def contar_frecuencia_categorias(entradas, categorias):
+        """
+        Calcula la frecuencia de cada categoría y cada variable en los abstracts.
+        
+        Args:
+            entradas: Lista de objetos EntradaBib con abstracts.
+            categorias: Diccionario de categorías con listas de sinónimos o listas de sus partes.
+        
+        Returns:
+            Dos diccionarios:
+            - frecuencias_categorias: Frecuencia total de cada categoría.
+            - frecuencias_variables: Frecuencia de cada sinónimo dentro de cada categoría.
+        """
+        frecuencias_categorias = Counter()
+        frecuencias_variables = defaultdict(Counter)
+        
+        for entrada in entradas:
+            if entrada.valor_orden:  # Asegurar que el abstract existe
+                # Convertir abstract en minúsculas y limpiar texto
+                abstract_texto = entrada.valor_orden.lower()
+                palabras = re.findall(r'\b\w+\b', abstract_texto)  # Solo palabras, sin puntuación
+                
+                for categoria, variables in categorias.items():
+                    # Contar la frecuencia de cada sinónimo o parte de sinónimo en el abstract
+                    for variable_lista in variables:  # `variable_lista` es una lista de partes de sinónimo
+                        total_conteo = 0  # Conteo acumulado para el sinónimo compuesto
+                        
+                        for parte in variable_lista:  # Cada parte de un sinónimo compuesto
+                            conteo_parte = palabras.count(parte.lower())  # Contar cada parte en el abstract
+                            total_conteo += conteo_parte
+                        
+                        # Asignar el total para el sinónimo compuesto y sumar al total de la categoría
+                        frecuencias_variables[categoria][" - ".join(variable_lista)] += total_conteo
+                        frecuencias_categorias[categoria] += total_conteo  # Sumar al total de la categoría
+        
+        return frecuencias_categorias, frecuencias_variables
+    
+    def generar_nube_palabras_base64(frecuencias_variables):
+        """
+        Genera una nube de palabras en base a las frecuencias de los sinónimos y retorna la imagen en formato base64.
+        
+        Args:
+            frecuencias_variables: Diccionario de frecuencias de variables por categoría.
+            
+        Returns:
+            La imagen de la nube de palabras en formato base64.
+        """
+        # Crear un diccionario con todas las palabras y sus frecuencias
+        palabras_frecuencias = {}
+        for categoria, variables in frecuencias_variables.items():
+            for variable, frecuencia in variables.items():
+                if frecuencia > 0:  # Ignorar sinónimos con frecuencia cero
+                    palabras_frecuencias[variable] = frecuencia
+
+        # Crear la nube de palabras
+        nube_palabras = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(palabras_frecuencias)
+        
+        # Convertir la imagen de la nube de palabras a base64
+        buffered = BytesIO()
+        plt.figure(figsize=(10, 5))
+        plt.imshow(nube_palabras, interpolation='bilinear')
+        plt.axis('off')
+        plt.savefig(buffered, format="png", bbox_inches='tight')
+        plt.close()
+        
+        # Convertir el buffer de imagen a base64
+        buffered.seek(0)
+        imagen_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        
+        return imagen_base64
 
 def main():
     # Configuración de ruta y archivos
     ruta = "./Util/"  # Cambiado para usar ruta relativa desde src
-    archivo_entrada = ruta + "filtradoPorDoi.bib"
     archivo_salida = ruta + "outputFile/referencias_ordenadas_GnomeSort_year.bib"
 
     # Asegurar que el directorio de salida existe
     os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
 
     # Campo por el cual se va a ordenar
-    campo_orden = "ENTRYTYPE"
+    campo_orden = "abstract"
 
     try:    
         # Leer las entradas desde el archivo BibTeX
-        # entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo_orden)
         salidas = BibFileUtil.leer_archivo_bib(archivo_salida, campo_orden)
 
-        # Calcular estadísticas
-        # stats = EstadisticasDescriptivas.calcular_estadisticas_anio(salidas, campo_orden)
-        # EstadisticasDescriptivas.imprimir_estadisticas(stats, campo_orden)
-        #EstadisticasDescriptivas.generar_histograma(stats)
+        # Paso 1: Cargar categorías y sinónimos
+        categorias = EstadisticasDescriptivas.cargar_datos("./Util/Categorias.csv")
 
-        # Obtener los autores más frecuentes del primer puesto
-        # autores_frecuentes = EstadisticasDescriptivas.autores_mas_frecuentes(salidas, campo_orden)
-        # print("\nAutores más frecuentes en el primer puesto:")
-        # for autor, frecuencia in autores_frecuentes.items():
-        #     print(f"{autor}: {frecuencia} artículos")
+        # Paso 3: Calcular frecuencias
+        frecuencias_categorias, frecuencias_variables = EstadisticasDescriptivas.contar_frecuencia_categorias(salidas, categorias)
 
-        # Verificar que cada entrada tenga el ENTRYTYPE correcto
-        # for entrada in salidas:
-        #     print(f"ENTRYTYPE: {entrada.entry_type}, Clave: {entrada.clave}")
-        tipo_producto = EstadisticasDescriptivas.calcular_estadisticas(salidas, campo_orden)
-        print(tipo_producto)
+        # # Paso 4: Imprimir resultados en consola
+        for categoria, total in frecuencias_categorias.items():
+            print(f"Categoría: {categoria} - Total: {total}")
+            for variable, frecuencia in frecuencias_variables[categoria].items():
+                print(f"  {variable}: {frecuencia}")
+
         
+
     except FileNotFoundError:
-        print(f"Error: No se pudo encontrar el archivo de entrada: {archivo_entrada}")
+        print(f"Error: No se pudo encontrar el archivo de entrada: {archivo_salida}")
     except Exception as e:
         print(f"Error durante la ejecución: {str(e)}")
 
