@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from Ordenamiento import GnomeSort
 from Util.BibFileUtil import BibFileUtil
+from Util.BibFileUtil2 import BibFileUtil2
 
 class EstadisticasDescriptivas:
 
@@ -163,6 +164,68 @@ class EstadisticasDescriptivas:
         except Exception as e:
             print(f"Error al calcular estadísticas: {str(e)}")
             return None
+        
+    def calcular_estadisticas_dos_campos(entradas, campo1, campo2, limite=15):
+        """
+        Calcula estadísticas descriptivas para dos campos en un archivo BibTeX, como (author, journal),
+        tomando solo el primer autor si uno de los campos es 'author'.
+
+        Args:
+            entradas: Lista de objetos EntradaBib de BibTeX.
+            campo1: Primer campo para la estadística (por ejemplo, 'author').
+            campo2: Segundo campo para la estadística (por ejemplo, 'journal').
+            limite: Número máximo de combinaciones más frecuentes a mostrar.
+
+        Returns:
+            Diccionario con estadísticas descriptivas para la combinación de ambos campos.
+        """
+        try:
+            combinaciones = []
+
+            # Filtramos las combinaciones válidas de campo1 y campo2, procesando solo el primer autor si campo1 o campo2 es "author"
+            for entrada in entradas:
+                valor1 = entrada.campos.get(campo1, '').strip()
+                valor2 = entrada.campos.get(campo2, '').strip()
+                
+                # Si campo1 es 'author', tomamos solo el primer autor
+                if campo1 == 'author' and valor1:
+                    valor1 = valor1.split(',')[0].strip()
+                
+                # Si campo2 es 'author', tomamos solo el primer autor
+                if campo2 == 'author' and valor2:
+                    valor2 = valor2.split(',')[0].strip()
+                
+                # Agregar solo si ambos valores existen
+                if valor1 and valor2:
+                    combinaciones.append((valor1, valor2))
+            
+            if not combinaciones:
+                raise ValueError(f"No se encontraron combinaciones válidas para los campos '{campo1}' y '{campo2}' en las entradas.")
+            
+            # Calcular frecuencias de las combinaciones
+            frecuencias = Counter(combinaciones)
+            
+            # Obtener las combinaciones más comunes hasta el límite especificado
+            combinaciones_mas_comunes = frecuencias.most_common(limite)
+            
+            # Calcular la "mediana" como valor medio alfabético si es categórico
+            tipos_ordenados = sorted(combinaciones)
+            mediana = tipos_ordenados[len(tipos_ordenados) // 2] if tipos_ordenados else None
+
+            # Crear el diccionario de estadísticas
+            stats = {
+                'cantidad': len(combinaciones),
+                'frecuencias': {f"{k[0]} - {k[1]}": v for k, v in combinaciones_mas_comunes},
+                'moda': f"{combinaciones_mas_comunes[0][0][0]} - {combinaciones_mas_comunes[0][0][1]}" if combinaciones_mas_comunes else None,
+                'mediana': mediana 
+            }
+            
+            return stats
+        
+        except Exception as e:
+            print(f"Error al calcular estadísticas: {e}")
+            return None
+
     @staticmethod
     def generar_histograma(stats, etiqueta_x):
         """
@@ -197,15 +260,12 @@ class EstadisticasDescriptivas:
         
         # Devolver la imagen en base64
         return img_base64
-    
-    
+
+
    
     def cargar_datos(nombre_archivo):
         """
         Carga el archivo de categorías y sinónimos en un diccionario.
-        
-        Args:
-            nombre_archivo: Nombre del archivo CSV que contiene las categorías y sinónimos.
         
         Returns:
             Diccionario con categorías como claves y listas de sinónimos como valores, donde cada sinónimo
@@ -237,10 +297,6 @@ class EstadisticasDescriptivas:
     def contar_frecuencia_categorias(entradas, categorias):
         """
         Calcula la frecuencia de cada categoría y cada variable en los abstracts.
-        
-        Args:
-            entradas: Lista de objetos EntradaBib con abstracts.
-            categorias: Diccionario de categorías con listas de sinónimos o listas de sus partes.
         
         Returns:
             Dos diccionarios:
@@ -274,9 +330,6 @@ class EstadisticasDescriptivas:
     def generar_nube_palabras_base64(frecuencias_variables):
         """
         Genera una nube de palabras en base a las frecuencias de los sinónimos y retorna la imagen en formato base64.
-        
-        Args:
-            frecuencias_variables: Diccionario de frecuencias de variables por categoría.
             
         Returns:
             La imagen de la nube de palabras en formato base64.
@@ -315,25 +368,18 @@ def main():
 
     # Campo por el cual se va a ordenar
     campo_orden = "abstract"
+    campo1 = "author"
+    campo2 = "year"
 
     try:    
         # Leer las entradas desde el archivo BibTeX
-        salidas = BibFileUtil.leer_archivo_bib(archivo_salida, campo_orden)
+        #salidas = BibFileUtil.leer_archivo_bib(archivo_salida, campo_orden)
 
-        # Paso 1: Cargar categorías y sinónimos
-        categorias = EstadisticasDescriptivas.cargar_datos("./Util/Categorias.csv")
-
-        # Paso 3: Calcular frecuencias
-        frecuencias_categorias, frecuencias_variables = EstadisticasDescriptivas.contar_frecuencia_categorias(salidas, categorias)
-
-        # # Paso 4: Imprimir resultados en consola
-        for categoria, total in frecuencias_categorias.items():
-            print(f"Categoría: {categoria} - Total: {total}")
-            for variable, frecuencia in frecuencias_variables[categoria].items():
-                print(f"  {variable}: {frecuencia}")
-
+        salidas = BibFileUtil2.leer_archivo_bib(archivo_salida)
         
+        doscampos = EstadisticasDescriptivas.calcular_estadisticas_dos_campos(salidas, campo1, campo2)
 
+        print(doscampos)
     except FileNotFoundError:
         print(f"Error: No se pudo encontrar el archivo de entrada: {archivo_salida}")
     except Exception as e:
