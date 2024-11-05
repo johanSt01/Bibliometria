@@ -33,7 +33,6 @@
                     <option value="journal">Journal</option>
                     <option value="publisher">Publisher</option>
                     <option value="source">Base de Datos</option>
-                    <option value="author - year">Autor - año</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary">Generar Histograma</button>
@@ -67,6 +66,50 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Sección para Datos Descriptivos de Dos Variables -->
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Datos Descriptivos de Dos Variables</h1>
+
+        <!-- Formulario de selección para dos variables -->
+        <form method="POST" class="mb-4">
+            <div class="mb-3">
+                <label for="campo1" class="form-label">Primera Variable</label>
+                <input type="text" class="form-control" id="campo1" name="campo1" placeholder="Ejemplo: author" required>
+            </div>
+            <div class="mb-3">
+                <label for="campo2" class="form-label">Segunda Variable</label>
+                <input type="text" class="form-control" id="campo2" name="campo2" placeholder="Ejemplo: year" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Verificar</button>
+        </form>
+
+        <!-- Histograma y Estadísticas Descriptivas para dos variables -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                {% if imagen_histograma_dos_variables %}
+                    <h2 class="text-center">Histograma de Frecuencia</h2>
+                    <img src="data:image/png;base64,{{ imagen_histograma_dos_variables }}" alt="Histograma de Frecuencia (Dos Variables)" class="img-fluid rounded shadow">
+                {% endif %}
+            </div>
+            <div class="col-md-4">
+                {% if estadisticas_dos_variables %}
+                    <h2 class="text-center">Estadísticas Descriptivas</h2>
+                    <ul class="list-group">
+                        <li class="list-group-item"><strong>Cantidad de datos:</strong> {{ estadisticas_dos_variables.cantidad }}</li>
+                        <li class="list-group-item"><strong>Media:</strong> No es posible</li>
+                        <li class="list-group-item"><strong>Mediana:</strong> {{ estadisticas_dos_variables.mediana }}</li>
+                        <li class="list-group-item"><strong>Moda:</strong> {{ estadisticas_dos_variables.moda }}</li>
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if error_mensaje %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_mensaje }}
+            </div>
+        {% endif %}
 
         <!-- Sección para mostrar las categorías y sus frecuencias -->
         <div class="mt-5">

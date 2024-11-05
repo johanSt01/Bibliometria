@@ -172,7 +172,7 @@ class EstadisticasDescriptivas:
         Args:
             entradas: Lista de objetos EntradaBib de BibTeX.
             campo1: Primer campo para la estadística (por ejemplo, 'author').
-            campo2: Segundo campo para la estadística (por ejemplo, 'journal').
+            campo2: Segundo campo para la estadística (por ejemplo, 'year').
             limite: Número máximo de combinaciones más frecuentes a mostrar.
 
         Returns:
@@ -375,7 +375,7 @@ def main():
         # Leer las entradas desde el archivo BibTeX
         salidas2 = BibFileUtil.leer_archivo_bib(archivo_salida)
         
-        doscampos = EstadisticasDescriptivas.calcular_estadisticas(salidas2, campo_orden)
+        doscampos = EstadisticasDescriptivas.calcular_estadisticas_dos_campos(salidas2, campo1, campo2)
 
         print(doscampos)
     except FileNotFoundError:
