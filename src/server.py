@@ -19,7 +19,7 @@ def index():
         campo = request.form.get("campo")
         if campo == "year":
             # Se cargan las entradas de los datos de la base de datos
-            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo)
+            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada)
             
             # Calcular estadísticas
             stats = EstadisticasDescriptivas.calcular_estadisticas_anio(entradas, campo)
@@ -29,7 +29,7 @@ def index():
 
         if campo == "author":
             # Se cargan las entradas de los datos de la base de datos
-            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo)
+            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada)
             
             # Calcular estadísticas
             stats = EstadisticasDescriptivas.calcular_estadisticas_max15(entradas, campo)
@@ -39,7 +39,7 @@ def index():
 
         if campo in ["ENTRYTYPE", "source"]:
             # Se cargan las entradas de los datos de la base de datos
-            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo)
+            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada)
             
             # Calcular estadísticas
             stats = EstadisticasDescriptivas.calcular_estadisticas(entradas, campo)
@@ -57,22 +57,22 @@ def index():
             # Generar y obtener la ruta del histograma
             imagen_histograma = EstadisticasDescriptivas.generar_histograma(stats, campo)
 
-        # if campo == "ENTRYTYPE - year":
-        #      # Leer las entradas del archivo
-        #     entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, campo)
+        if campo == "author - year":
+             # Leer las entradas del archivo
+            entradas = BibFileUtil.leer_archivo_bib(archivo_entrada)
             
-        #     # Calcular las frecuencias de tipo de producto por año
-        #     frecuencias = EstadisticasDescriptivas.calcular_frecuencias_producto_anio(entradas)
+            # Calcular las frecuencias de tipo de producto por año
+            stats = EstadisticasDescriptivas.calcular_estadisticas_dos_campos(entradas, "author", "year")
             
-        #     # Generar el histograma bivariado
-        #     imagen_histograma = EstadisticasDescriptivas.generar_histograma_producto_anio(frecuencias, titulo)
+            # Generar y obtener la ruta del histograma
+            imagen_histograma = EstadisticasDescriptivas.generar_histograma(stats, "author - year")
         
     # Cargar la descripción de las categorias y variables con sus frecuencias 
     # Cargar categorías y sinónimos
     categorias = EstadisticasDescriptivas.cargar_datos("./Util/Categorias.csv")
 
     # Leer entradas de la base de datos y contar frecuencias
-    entradas = BibFileUtil.leer_archivo_bib(archivo_entrada, "abstract")
+    entradas = BibFileUtil.leer_archivo_bib(archivo_entrada)
     frecuencias_categorias, frecuencias_variables = EstadisticasDescriptivas.contar_frecuencia_categorias(entradas, categorias)
 
     # Crear datos para la plantilla organizados por categorías

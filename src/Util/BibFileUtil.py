@@ -2,41 +2,19 @@ import re
 
 class BibFileUtil:
     class EntradaBib:
-        def __init__(self, entrada_completa, clave, entry_type, valor_orden):
+        def __init__(self, entrada_completa, clave, entry_type, campos):
             self.entrada_completa = entrada_completa
             self.clave = clave
             self.entry_type = entry_type 
-            self.valor_orden = valor_orden
-    
-    def escribir_entradas_ordenadas(entradas, archivo_salida):
-        """
-        Escribe las entradas ordenadas en un archivo de salida.
-        
-        Args:
-            entradas: Lista de objetos EntradaBib
-            archivo_salida: Ruta del archivo de salida
-        """
-        with open(archivo_salida, 'w', encoding='utf-8') as escritor:
-            for entrada in entradas:
-                escritor.write(entrada.entrada_completa)
-                escritor.write("\n")
-    
-    def leer_archivo_bib(nombre_archivo, campo_orden):
-        """
-        Lee un archivo BibTeX y extrae sus entradas, incluyendo ENTRYTYPE.
-        
-        Args:
-            nombre_archivo: Ruta del archivo BibTeX a leer
-            campo_orden: Campo por el cual se ordenarán las entradas
-            
-        Returns:
-            Lista de objetos EntradaBib
-        """
+            self.campos = campos  # Diccionario que contiene todos los campos de la entrada
+
+    @staticmethod
+    def leer_archivo_bib(nombre_archivo):
         entradas = []
         entrada_actual = []
         clave_actual = ""
         entry_type_actual = ""
-        valor_orden_actual = ""
+        campos = {}
         dentro_de_entrada = False
         
         # Abrimos el archivo y recorremos cada línea
@@ -45,11 +23,11 @@ class BibFileUtil:
                 if linea.strip().startswith("@"):
                     # Almacenar la entrada anterior si ya estamos dentro de una entrada
                     if dentro_de_entrada:
-                        entradas.append(BibFileUtil.EntradaBib("".join(entrada_actual), clave_actual, entry_type_actual, valor_orden_actual))
+                        entradas.append(BibFileUtil.EntradaBib("".join(entrada_actual), clave_actual, entry_type_actual, campos))
                         entrada_actual = []
                         clave_actual = ""
                         entry_type_actual = ""
-                        valor_orden_actual = ""
+                        campos = {}
                     
                     dentro_de_entrada = True
                     entrada_actual.append(linea)
@@ -63,20 +41,21 @@ class BibFileUtil:
                 elif dentro_de_entrada:
                     entrada_actual.append(linea)
                     
-                    # Buscar el valor del campo para ordenar, si existe
-                    if not valor_orden_actual and linea.strip().lower().startswith(campo_orden.lower()):
-                        patron_valor = re.compile(rf"{campo_orden}\s*=\s*\{{([^}}]+)\}}")
-                        coincidencia_valor = patron_valor.search(linea)
-                        if coincidencia_valor:
-                            valor_orden_actual = coincidencia_valor.group(1)
+                    # Buscar todos los pares clave-valor dentro de la entrada
+                    patron_campo = re.compile(r"(\w+)\s*=\s*\{(.+?)\}")
+                    coincidencia_campo = patron_campo.search(linea)
+                    if coincidencia_campo:
+                        campo = coincidencia_campo.group(1).lower()  # Convertimos a minúscula para uniformidad
+                        valor = coincidencia_campo.group(2)
+                        campos[campo] = valor
                     
                     # Final de la entrada (línea que contiene '}')
                     if linea.strip() == "}":
-                        entradas.append(BibFileUtil.EntradaBib("".join(entrada_actual), clave_actual, entry_type_actual, valor_orden_actual))
+                        entradas.append(BibFileUtil.EntradaBib("".join(entrada_actual), clave_actual, entry_type_actual, campos))
                         entrada_actual = []
                         clave_actual = ""
                         entry_type_actual = ""
-                        valor_orden_actual = ""
+                        campos = {}
                         dentro_de_entrada = False
         
         return entradas

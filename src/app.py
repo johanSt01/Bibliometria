@@ -17,7 +17,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from Ordenamiento import GnomeSort
 from Util.BibFileUtil import BibFileUtil
-from Util.BibFileUtil2 import BibFileUtil2
 
 class EstadisticasDescriptivas:
 
@@ -36,15 +35,17 @@ class EstadisticasDescriptivas:
             valores = []
             for entrada in entradas:
                 try:
+                    valor = entrada.campos.get(campo, '').strip()
+
                     # Limpiar el valor si el campo es 'year'
                     if campo == "year":
-                        entrada.valor_orden = EstadisticasDescriptivas.limpiar_anio(entrada.valor_orden)
+                        valor = EstadisticasDescriptivas.limpiar_anio(valor)
                     
                     # Intentar convertir el valor a número
-                    valor = float(entrada.valor_orden) if '.' in entrada.valor_orden else int(entrada.valor_orden)
-                    valores.append(valor)
+                    valor_num = float(valor) if '.' in valor else int(valor)
+                    valores.append(valor_num)
                 except (ValueError, TypeError):
-                    print(f"Advertencia: No se pudo convertir el valor '{entrada.valor_orden}' a número.")
+                    print(f"Advertencia: No se pudo convertir el valor '{valor}' a número.")
                     continue
             
             if not valores:
@@ -53,11 +54,8 @@ class EstadisticasDescriptivas:
             # Calcular estadísticas
             stats = {
                 'cantidad': len(valores),
-                #'media': statistics.mean(valores),
                 'mediana': statistics.median(valores),
                 'moda': statistics.mode(valores),
-                'desviacion_estandar': statistics.stdev(valores) if len(valores) > 1 else 0,
-                'varianza': statistics.variance(valores) if len(valores) > 1 else 0,
                 'rango': max(valores) - min(valores),
                 'minimo': min(valores),
                 'maximo': max(valores)
@@ -86,15 +84,16 @@ class EstadisticasDescriptivas:
         regex_autor_valido = re.compile(r'\S')  # Busca al menos un carácter no blanco
 
         # Extraer el primer autor de cada entrada
-        primeros_autores = []
+        primeros_datos = []
         for entrada in entradas:
             try:
+                valor = entrada.campos.get(campo, '').strip()
                 # Dividir el campo 'author' para obtener solo el primer autor
-                primer_autor = entrada.valor_orden.split(",")[0].strip()
+                primer_dato = valor.split(",")[0].strip()
 
                 # Verificar que el primer autor no esté vacío usando la expresión regular
-                if regex_autor_valido.search(primer_autor):
-                    primeros_autores.append(primer_autor)
+                if regex_autor_valido.search(primer_dato):
+                    primeros_datos.append(primer_dato)
             except KeyError:
                 print(f"Advertencia: El campo '{campo}' no está presente en una entrada.")
                 continue
@@ -103,18 +102,18 @@ class EstadisticasDescriptivas:
                 continue
 
         # Calcular la frecuencia de cada primer autor
-        contador_autores = Counter(primeros_autores)
+        contador_autores = Counter(primeros_datos)
         
         # Seleccionar los 'n_top' autores más frecuentes
         autores_frecuentes = dict(contador_autores.most_common(n_top))
 
         # Calcular estadísticas adicionales
-        total_autores = len(primeros_autores)
+        total_autores = len(primeros_datos)
         moda = contador_autores.most_common(1)[0] if contador_autores else None
         
         # Ordenar los autores alfabéticamente para calcular la mediana
-        autores_ordenados = sorted(primeros_autores)
-        mediana = autores_ordenados[len(autores_ordenados) // 2] if autores_ordenados else None
+        datos_ordenados = sorted(primeros_datos)
+        mediana = datos_ordenados[len(datos_ordenados) // 2] if datos_ordenados else None
 
         # Crear el diccionario de estadísticas
         stats = {
@@ -138,7 +137,7 @@ class EstadisticasDescriptivas:
             if campo == "ENTRYTYPE":
                 tipos_producto = [entrada.entry_type for entrada in entradas if entrada.entry_type]
             else:
-                tipos_producto = [entrada.valor_orden for entrada in entradas if entrada.valor_orden]
+                tipos_producto = [entrada.campos.get(campo, '').strip() for entrada in entradas if entrada.campos.get(campo, '').strip()]
             
             if not tipos_producto:
                 raise ValueError(f"No se encontraron valores válidos para el campo '{campo}' en las entradas.")
@@ -294,7 +293,7 @@ class EstadisticasDescriptivas:
         
         return categorias
 
-    def contar_frecuencia_categorias(entradas, categorias):
+    def contar_frecuencia_categorias(entradas, categorias, campo="abstract"):
         """
         Calcula la frecuencia de cada categoría y cada variable en los abstracts.
         
@@ -307,9 +306,10 @@ class EstadisticasDescriptivas:
         frecuencias_variables = defaultdict(Counter)
         
         for entrada in entradas:
-            if entrada.valor_orden:  # Asegurar que el abstract existe
+            if entrada.campos.get(campo, '').strip():  # Asegurar que el abstract existe
+                valor = entrada.campos.get(campo, '').strip()
                 # Convertir abstract en minúsculas y limpiar texto
-                abstract_texto = entrada.valor_orden.lower()
+                abstract_texto = valor.lower()
                 palabras = re.findall(r'\b\w+\b', abstract_texto)  # Solo palabras, sin puntuación
                 
                 for categoria, variables in categorias.items():
@@ -367,17 +367,15 @@ def main():
     os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
 
     # Campo por el cual se va a ordenar
-    campo_orden = "abstract"
+    campo_orden = "ENTRYTYPE"
     campo1 = "author"
     campo2 = "year"
 
     try:    
         # Leer las entradas desde el archivo BibTeX
-        #salidas = BibFileUtil.leer_archivo_bib(archivo_salida, campo_orden)
-
-        salidas = BibFileUtil2.leer_archivo_bib(archivo_salida)
+        salidas2 = BibFileUtil.leer_archivo_bib(archivo_salida)
         
-        doscampos = EstadisticasDescriptivas.calcular_estadisticas_dos_campos(salidas, campo1, campo2)
+        doscampos = EstadisticasDescriptivas.calcular_estadisticas(salidas2, campo_orden)
 
         print(doscampos)
     except FileNotFoundError:
