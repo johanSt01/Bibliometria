@@ -5,7 +5,7 @@ class BibFileUtil:
         def __init__(self, entrada_completa, clave, entry_type, campos):
             self.entrada_completa = entrada_completa
             self.clave = clave
-            self.entry_type = entry_type 
+            self.entry_type = entry_type
             self.campos = campos  # Diccionario que contiene todos los campos de la entrada
 
     @staticmethod

@@ -11,12 +11,11 @@ import base64
 import csv
 from wordcloud import WordCloud
 from io import BytesIO
+from Ordenamiento import GnomeSort
+from Util.BibFileUtil import BibFileUtil
 
 # Añadir el directorio actual al path de Python
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from Ordenamiento import GnomeSort
-from Util.BibFileUtil import BibFileUtil
 
 class EstadisticasDescriptivas:
 
@@ -180,7 +179,7 @@ class EstadisticasDescriptivas:
         """
         try:
             combinaciones = []
-
+            print(campo1, campo2)
             # Filtramos las combinaciones válidas de campo1 y campo2, procesando solo el primer autor si campo1 o campo2 es "author"
             for entrada in entradas:
                 valor1 = entrada.campos.get(campo1, '').strip()
@@ -193,7 +192,13 @@ class EstadisticasDescriptivas:
                 # Si campo2 es 'author', tomamos solo el primer autor
                 if campo2 == 'author' and valor2:
                     valor2 = valor2.split(',')[0].strip()
+
+                if campo1 == "ENTRYTYPE":
+                    valor1 = entrada.entry_type
                 
+                if campo2 == "ENTRYTYPE":
+                    valor2 = entrada.entry_type
+
                 # Agregar solo si ambos valores existen
                 if valor1 and valor2:
                     combinaciones.append((valor1, valor2))
@@ -274,8 +279,8 @@ class EstadisticasDescriptivas:
         with open(nombre_archivo, mode='r', encoding='utf-8') as archivo_csv:
             lector_csv = csv.DictReader(archivo_csv)
             for fila in lector_csv:
-                categoria = fila['Categoria'].strip() # Elimina espacios y convierte a minúsculas
-                sinonimo = fila['Variable'].strip()   # Elimina espacios y convierte a minúsculas
+                categoria = fila['Categoria'].strip() # Elimina espacios
+                sinonimo = fila['Variable'].strip()   # Elimina espacios
                 
                 # Manejar sinónimos compuestos separados por guion
                 if ' - ' in sinonimo:
@@ -375,7 +380,7 @@ def main():
         # Leer las entradas desde el archivo BibTeX
         salidas2 = BibFileUtil.leer_archivo_bib(archivo_salida)
         
-        doscampos = EstadisticasDescriptivas.calcular_estadisticas_dos_campos(salidas2, campo1, campo2)
+        doscampos = EstadisticasDescriptivas.calcular_estadisticas_dos_campos(salidas2, campo_orden, campo2)
 
         print(doscampos)
     except FileNotFoundError:

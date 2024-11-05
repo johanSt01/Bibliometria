@@ -62,6 +62,7 @@ def index():
         elif campo1 and campo2:
             # Verificar si los campos existen en las entradas
             campos_disponibles = {key for entrada in entradas for key in entrada.campos.keys()}
+            campos_disponibles.add('ENTRYTYPE')
             
             if campo1 not in campos_disponibles or campo2 not in campos_disponibles:
                 error_mensaje = f"Uno o ambos campos ingresados ('{campo1}', '{campo2}') no se encontraron en los datos."
