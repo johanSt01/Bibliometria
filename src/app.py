@@ -391,7 +391,7 @@ class EstadisticasDescriptivas:
 
         # Seleccionar los 10 journals con más publicaciones
         top_10_journals = [journal for journal, _ in journal_counts.most_common(10)]
-        print(top_10_journals)
+
         # Para cada journal, seleccionar los 15 artículos más citados
         journal_data = {}
         for journal in top_10_journals:
@@ -475,32 +475,3 @@ class EstadisticasDescriptivas:
         buffer.close()
 
         return img_base64
-
-def main():
-    # Configuración de ruta y archivos
-    ruta = "./Util/"  # Cambiado para usar ruta relativa desde src
-    archivo_salida = ruta + "outputFile/referencias_ordenadas_GnomeSort_year.bib"
-
-    # Asegurar que el directorio de salida existe
-    os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
-
-    # Campo por el cual se va a ordenar
-    campo_orden = "ENTRYTYPE"
-    campo1 = "author"
-    campo2 = "year"
-
-    try:    
-        # Leer las entradas desde el archivo BibTeX
-        salidas = BibFileUtil.leer_archivo_bib(archivo_salida)
-        
-        # Identificar los journals más publicados y sus artículos más citados
-        journal_data = EstadisticasDescriptivas.identificar_journals_mas_publicados(salidas)
-        
-        print(journal_data)
-    except FileNotFoundError:
-        print(f"Error: No se pudo encontrar el archivo de entrada: {archivo_salida}")
-    except Exception as e:
-        print(f"Error durante la ejecución: {str(e)}")
-
-if __name__ == "__main__":
-    main()
