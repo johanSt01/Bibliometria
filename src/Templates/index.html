@@ -137,7 +137,7 @@
                 {% endif %}
             </div>
         </div>
-
+        
         <!-- Sección para la nube de palabras -->
         <div class="mt-6 mb-5">
             <h1 class="text-center">Nube de Palabras de Categorías</h1>
@@ -146,6 +146,21 @@
                     <img src="data:image/png;base64,{{ nube_palabras }}" alt="Nube de Palabras" class="img-fluid rounded shadow">
                 {% endif %}
             </div>
+        </div>
+
+        <!-- Sección para el grafo de las citas -->
+        <div class="container">
+            <h1 class="text-center">Grafo de Relaciones entre Journals y Artículos</h1>
+        
+            {% if img_grafo_base64 %}
+                <div class="text-center">
+                    <img src="data:image/png;base64,{{ img_grafo_base64 }}" alt="Grafo de Journals" class="img-fluid">
+                </div>
+            {% elif error_mensaje %}
+                <p class="text-danger text-center">{{ error_mensaje }}</p>
+            {% else %}
+                <p class="text-center">No se ha generado el grafo.</p>
+            {% endif %}
         </div>
     </div>
 </div>

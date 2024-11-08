@@ -11,6 +11,7 @@ archivo_entrada = ruta + "referencias_ordenadas_GnomeSort_year.bib"
 # Cargar los datos de frecuencias y la nube de palabras una vez
 categorias = EstadisticasDescriptivas.cargar_datos("./Util/Categorias.csv")
 entradas = BibFileUtil.leer_archivo_bib(archivo_entrada)
+
 frecuencias_categorias, frecuencias_variables = EstadisticasDescriptivas.contar_frecuencia_categorias(entradas, categorias)
 
 # Generar los datos de frecuencias por categorías
@@ -24,6 +25,12 @@ datos_frecuencias = {
 
 # Generar la nube de palabras una vez
 nube_palabras = EstadisticasDescriptivas.generar_nube_palabras_base64(frecuencias_variables)
+
+#Cargar los datos del grafo
+journal_data = EstadisticasDescriptivas.identificar_journals_mas_publicados(entradas)
+
+# Generar el grafo en formato base64
+img_grafo_base64 = EstadisticasDescriptivas.generar_grafo_journals(journal_data)
 
 # Ruta principal
 @app.route('/', methods=['GET', 'POST'])
@@ -88,6 +95,7 @@ def index():
         estadisticas_dos_variables=stats_dos_variables,
         datos_frecuencias=datos_frecuencias,
         nube_palabras=nube_palabras,
+        img_grafo_base64=img_grafo_base64,
         error_mensaje=error_mensaje
     )
 
