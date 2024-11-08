@@ -3,7 +3,7 @@ from flask import Flask, render_template, request
 from app import EstadisticasDescriptivas
 from Util.BibFileUtil import BibFileUtil
 
-app = Flask(__name__, static_folder='Style')
+app = Flask(__name__, static_folder='Style', template_folder='Templates')
 
 # Configuración de archivo y datos preprocesados
 ruta = "./Util/outputFile/"
